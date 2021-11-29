@@ -17,6 +17,7 @@ library(kableExtra)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r include=FALSE}
 data <-read.csv("fertility_sperm.csv")
 colnames(data)
@@ -40,3 +41,57 @@ data <- data %>%
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
 ```
+
+Alona
+
+```{r}
+# simple substitution estimator (a.k.a. parameteric G-computation)
+txt <- ObsData
+control <- ObsData
+
+txt$A <- 1
+control$A <- 0
+
+g.comp.reg <- glm(Y ~ W11 + W12 + W13 + W14 + W2 + A, family="binomial", data=ObsData)
+pred.txt <- predict(g.comp.reg, newdata = txt, type = "response") 
+pred.control <- predict(g.comp.reg, newdata = control, type = "response")
+psi.hat <- mean(pred.txt - pred.control)
+psi.hat
+
+# IPTW estimator
+prob.AW.reg <- glm(A ~ W11 + W12 + W13 + W14 + W2, family="binomial", data=ObsData)
+prob.1W <- predict(prob.AW.reg, type= "response")
+prob.0W <- 1 - prob.1W
+
+hist(prob.1W)
+summary(prob.1W)
+
+hist(prob.0W)
+summary(prob.0W)
+
+wt1 <- as.numeric(ObsData$A==1)/prob.1W 
+wt0 <- as.numeric(ObsData$A==0)/prob.0W
+summary(wt1)
+hist(wt1)
+summary(wt0)
+hist(wt0)
+
+psi.iptw <- mean(wt1*ObsData$Y) - mean(wt0*ObsData$Y)
+psi.iptw
+
+# Modified HT
+psi.ht <- mean(wt1*ObsData$Y)/mean(wt1) - mean(wt0*ObsData$Y)/mean(wt0)
+psi.ht
+
+# Unadjusted estimator
+wt1.ua <- as.numeric(ObsData$A==1)/mean(ObsData$A == 1)
+wt0.ua <- as.numeric(ObsData$A==0)/mean(ObsData$A == 0)
+psi.unadj <- mean(wt1.ua*ObsData$Y) - mean(wt0.ua*ObsData$Y)
+psi.unadj
+
+
+# TMLE estimator
+
+```
+
+
