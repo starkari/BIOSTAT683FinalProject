@@ -8,57 +8,35 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-#install.packages("gt")
-library(gt)
+library(tidyverse)
+library(SuperLearner)
+library(ltmle)
+library(MASS)
 library(dplyr)
 library(kableExtra)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r include=FALSE}
-fertility_sperm <- read.csv("fertility_sperm.csv")
 data <-read.csv("fertility_sperm.csv")
-colnames(fertility_sperm)
-#kable(summary(fertility_sperm))
-head(fertility_sperm)
+colnames(data)
 
-data %>% mutate(W11 = age,
-                W12 = sitting_hour,
-                W13 = trauma,
-                W2 = case_when(season==-1 ~ '',
-                               season==-0.33 ~'',
-                               season==0.33 ~ '',
-                               season==1 ~ ''),
-                A = case_when(smoking==-1 ~ '0',
-                              smoking==0 ~ '1',
-                              smoking==1 ~ '1'),
-                )
-# data$A <- ifelse(data$smoking==-1,0,1)
-# data$W11 <- data$age
-# data$W12 <- data$sitting_hour
-# data$W13 <- data$surgery
-# data$W14 <- data$trauma
-# data$W15 <- ifelse(data$alcohol==1,)
-# data$W2 <- as.factor(data$season)
+data <- data %>% 
+  mutate(W11 = age,
+         W12 = sitting_hour,
+         W13 = trauma,
+         W14 = case_when(alcohol<0.8 ~ '0',
+                         alcohol==0.8 ~ '1',
+                         alcohol==1 ~ '2'),
+         W2 = case_when(season==-1 ~ 'Winter',
+                        season==-0.33 ~'Spring',
+                        season==0.33 ~ 'Summer',
+                        season==1 ~ 'Fall'),
+         A = case_when(smoking==-1 ~ 0,
+                       smoking==0 ~ 1,
+                       smoking==1 ~ 1),
+         Y = ifelse(diagnosis=='N',1,0))
+
+ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
 ```
-
-
-
-```{r include=FALSE}
-table(fertility_sperm$diagnosis, fertility_sperm$season)
-table(fertility_sperm$diagnosis, fertility_sperm$alcohol)
-table(fertility_sperm$diagnosis, fertility_sperm$smoking)
-table(fertility_sperm$season, fertility_sperm$smoking)
-table(fertility_sperm$surgery, fertility_sperm$smoking)
-table(fertility_sperm$trauma, fertility_sperm$smoking)
-summary(fertility_sperm$age)
-hist(fertility_sperm$age)
-```
-
-
-```{r}
-prob.AW.reg <- glm( ~ W1 + W2 + W3 + W4, family="binomial", data=data)
-prob.AW.reg
-```
-
