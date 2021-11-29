@@ -1,0 +1,47 @@
+---
+title: "610 Final project"
+author: "Ariane Stark, Minsu Kim, Diezhang Wu, Alona Muzikansky"
+date: "11/6/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+#install.packages("gt")
+library(gt)
+library(dplyr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+fertility_sperm <- read.csv("fertility_sperm.csv")
+data <-read.csv("fertility_sperm.csv")
+colnames(fertility_sperm)
+#kable(summary(fertility_sperm))
+head(fertility_sperm)
+
+data$A <- ifelse(data$smoking==-1,0,1)
+
+```
+
+
+
+```{r include=FALSE}
+table(fertility_sperm$diagnosis, fertility_sperm$season)
+table(fertility_sperm$diagnosis, fertility_sperm$alcohol)
+table(fertility_sperm$diagnosis, fertility_sperm$smoking)
+table(fertility_sperm$season, fertility_sperm$smoking)
+table(fertility_sperm$surgery, fertility_sperm$smoking)
+table(fertility_sperm$trauma, fertility_sperm$smoking)
+summary(fertility_sperm$age)
+hist(fertility_sperm$age)
+```
+
+
+```{r}
+prob.AW.reg <- glm( ~ W1 + W2 + W3 + W4, family="binomial", data=data)
+prob.AW.reg
+```
+
