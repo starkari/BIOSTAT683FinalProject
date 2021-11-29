@@ -22,7 +22,24 @@ colnames(fertility_sperm)
 #kable(summary(fertility_sperm))
 head(fertility_sperm)
 
-data$A <- ifelse(data$smoking==-1,0,1)
+data %>% mutate(W11 = age,
+                W12 = sitting_hour,
+                W13 = trauma,
+                W2 = case_when(season==-1 ~ '',
+                               season==-0.33 ~'',
+                               season==0.33 ~ '',
+                               season==1 ~ ''),
+                A = case_when(smoking==-1 ~ '0',
+                              smoking==0 ~ '1',
+                              smoking==1 ~ '1'),
+                )
+# data$A <- ifelse(data$smoking==-1,0,1)
+# data$W11 <- data$age
+# data$W12 <- data$sitting_hour
+# data$W13 <- data$surgery
+# data$W14 <- data$trauma
+# data$W15 <- ifelse(data$alcohol==1,)
+# data$W2 <- as.factor(data$season)
 
 ```
 
