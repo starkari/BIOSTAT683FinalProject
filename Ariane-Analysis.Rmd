@@ -1,0 +1,151 @@
+---
+title: "Ariane-Analysis"
+author: "Ariane Stark"
+date: "11/29/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(SuperLearner)
+library(ltmle)
+library(MASS)
+library(dplyr)
+library(kableExtra)
+library(caret)
+library(randomForest)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r include=FALSE}
+data <-read.csv("fertility_sperm.csv")
+colnames(data)
+
+data <- data %>% 
+  mutate(W11 = age,
+         W12 = sitting_hour,
+         W13 = trauma,
+         W14 = case_when(alcohol<0.8 ~ '0',
+                         alcohol==0.8 ~ '1',
+                         alcohol==1 ~ '2'),
+         W2 = case_when(season==-1 ~ 'Winter',
+                        season==-0.33 ~'Spring',
+                        season==0.33 ~ 'Summer',
+                        season==1 ~ 'Fall'),
+         A = case_when(smoking==-1 ~ 0,
+                       smoking==0 ~ 1,
+                       smoking==1 ~ 1),
+         Y = ifelse(diagnosis=='N',1,0))
+
+ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
+
+```
+
+
+# Parametric G-Comp
+
+```{r}
+
+reg.model<- glm(Y ~ W11 + W12 + W13 + W14 + W2 + A
+                + A*W11 + A*W12 + A*W13 + A*W14 + A*W2, 
+                family='binomial', data=ObsData)
+
+txt<- control <- ObsData
+
+txt$A <-1
+control$A <- 0
+
+predictY.txt<- predict(reg.model, newdata = txt, type='response')
+predictY.control<- predict(reg.model, newdata = control, type='response')
+
+mean(predictY.txt - predictY.control)
+
+
+```
+
+
+
+
+# IPTW
+```{r}
+prob.AW.reg<- glm(A ~ W11 + W12 + W13 + W14 + W2, 
+                  family="binomial", data=ObsData)
+prob.1W <- predict(prob.AW.reg, type= "response")
+prob.0W <- 1 - prob.1W
+
+
+wt1 <- as.numeric(ObsData$A==1)/prob.1W
+wt0 <- as.numeric(ObsData$A==0)/prob.0W
+
+summary(wt1)
+summary(wt0)
+
+IPTW<- mean( wt1*ObsData$Y) -  mean( wt0*ObsData$Y)
+IPTW
+```
+Over 50% of wt1 are zero
+
+The IPTW estimate of $\Psi(\mathbb{P}_0)=$ `r paste0(IPTW*100,"%)`
+
+
+# Stabilized IPTW - Modified Horvitz Thompson
+
+```{r}
+MHT <- mean( wt1*ObsData$Y)/mean( wt1) -  mean( wt0*ObsData$Y)/mean( wt0)
+MHT
+```
+
+
+# Superlearner
+
+```{r message=FALSE, warning=FALSE}
+set.seed(123)
+
+X<- subset(ObsData, select= -Y )
+
+SL.library<- c('SL.glm', 'SL.glm.interaction', "SL.step",
+               "SL.randomForest","SL.step.forward","SL.stepAIC")
+
+SL.out<- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
+                      family='binomial', 
+                      cvControl=list(V=10,stratifyCV=TRUE),
+                      verbose = FALSE)
+
+SL.out
+
+#SL.out$SL.predict
+
+mean( (ObsData$Y- SL.out$SL.predict)^2)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
+                            SL.library=SL.library, family='binomial',
+                            cvControl = list(V = 5), 
+                            innerCvControl = list(list(V = 20)))
+
+summary(CV.SL.out)
+
+CV.SL.out$coef
+
+
+CV.SL.out$whichDiscrete
+```
+Random forest had bets performance in 2 calls and step aic in the other 3
+
+
+Random seeds seem to alternate around rf, step aic, and step forward
+
+
+# TMLE
+
+```{r message=FALSE, warning=FALSE}
+ltmle.SL<- ltmle(data=ObsData, Anodes='A', Ynodes='Y', abar=list(1,0),
+                 SL.library=SL.library)
+summary(ltmle.SL)
+
+```
+
+
