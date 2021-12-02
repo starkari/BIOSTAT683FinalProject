@@ -57,7 +57,7 @@ table(ObsData$W2,ObsData$Y,ObsData$A)
 ```{r}
 
 reg.model<- glm(Y ~ W11 + W12 + W13 + W14 + W2 + A
-                + A*W11 + A*W12 + A*W13 + A*W14 + A*W2, 
+                + A*W11 + A*W12 + A*W13 + A*W14, 
                 family='binomial', data=ObsData)
 
 txt<- control <- ObsData
@@ -78,7 +78,7 @@ mean(predictY.txt - predictY.control)
 
 # IPTW
 ```{r}
-prob.AW.reg<- glm(A ~ W11 + W12 + W13 + W14 + W2, 
+prob.AW.reg<- glm(A ~ W11 + W12 + W13 + W14, 
                   family="binomial", data=ObsData)
 prob.1W <- predict(prob.AW.reg, type= "response")
 prob.0W <- 1 - prob.1W
