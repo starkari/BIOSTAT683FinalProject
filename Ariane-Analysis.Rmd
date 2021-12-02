@@ -49,6 +49,8 @@ table(ObsData$W14,ObsData$Y,ObsData$A)
 
 table(ObsData$W2,ObsData$Y,ObsData$A)
 
+
+table(ObsData$W13,ObsData$W14,ObsData$A)
 ```
 
 
