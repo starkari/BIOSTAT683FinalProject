@@ -26,20 +26,31 @@ data <- data %>%
   mutate(W11 = age,
          W12 = sitting_hour,
          W13 = trauma,
-         W14 = case_when(alcohol<0.8 ~ '0',
+         W14 = case_when(alcohol<0.8 ~ '2',
                          alcohol==0.8 ~ '1',
-                         alcohol==1 ~ '2'),
-         W2 = case_when(season==-1 ~ 'Winter',
-                        season==-0.33 ~'Spring',
-                        season==0.33 ~ 'Summer',
-                        season==1 ~ 'Fall'),
+                         alcohol==1 ~ '0'),
+         W2 = case_when(season==-1 ~ 'Fall/Winter',
+                        season==-0.33 ~'Spring/Summer',
+                        season==0.33 ~ 'Spring/Summer',
+                        season==1 ~ 'Fall/Winter'),
          A = case_when(smoking==-1 ~ 0,
                        smoking==0 ~ 1,
                        smoking==1 ~ 1),
          Y = ifelse(diagnosis=='N',1,0))
 
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
+```
 
+
+```{r include=FALSE}
+table(ObsData$W13,ObsData$Y,ObsData$A)
+
+table(ObsData$W14,ObsData$Y,ObsData$A)
+
+table(ObsData$W2,ObsData$Y,ObsData$A)
+
+
+table(ObsData$W13,ObsData$W14,ObsData$A)
 ```
 
 
@@ -48,7 +59,7 @@ ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 ```{r}
 
 reg.model<- glm(Y ~ W11 + W12 + W13 + W14 + W2 + A
-                + A*W11 + A*W12 + A*W13 + A*W14 + A*W2, 
+                + A*W11 + A*W12 + A*W13 + A*W14, 
                 family='binomial', data=ObsData)
 
 txt<- control <- ObsData
@@ -69,7 +80,7 @@ mean(predictY.txt - predictY.control)
 
 # IPTW
 ```{r}
-prob.AW.reg<- glm(A ~ W11 + W12 + W13 + W14 + W2, 
+prob.AW.reg<- glm(A ~ W11 + W12 + W13 + W14, 
                   family="binomial", data=ObsData)
 prob.1W <- predict(prob.AW.reg, type= "response")
 prob.0W <- 1 - prob.1W
