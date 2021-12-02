@@ -105,7 +105,7 @@ set.seed(123)
 X<- subset(ObsData, select= -Y )
 
 SL.library<- c('SL.glm', 'SL.glm.interaction', "SL.step",
-               "SL.randomForest","SL.step.forward","SL.stepAIC")
+               "SL.randomForest","SL.step.forward","SL.stepAIC","SL.mean")
 
 SL.out<- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
                       family='binomial', 
