@@ -45,7 +45,7 @@ ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
 Alona
 
-```{r}
+```{r warning=FALSE}
 # simple substitution estimator (a.k.a. parameteric G-computation)
 txt <- ObsData
 control <- ObsData
@@ -98,7 +98,7 @@ psi.unadj
 
 
 ## SS, IPTW and TMLE estimator with super learner
-```{r}
+```{r warning=FALSE}
 library("SuperLearner")
 SL.library<- c('SL.glm', 'SL.glm.interaction', "SL.step",
                "SL.randomForest","SL.step.forward","SL.stepAIC","SL.mean")
@@ -124,7 +124,7 @@ PsiHat.SS
 ```
 
 
-```{r}
+```{r warning=FALSE}
 ## IPTW with TLME
 SL.exposure<- SuperLearner(Y=ObsData$A, X=X[,-ncol(X)], SL.library=SL.library, family="binomial")
 SL.exposure
@@ -146,7 +146,7 @@ PsiHat.IPTW
 
 
 
-```{r}
+```{r warning=FALSE}
 ## TMLE estimator
 logitUpdate<- glm(ObsData$Y ~ -1 +offset(qlogis(expY.givenAW)) + H.AW, family='binomial')
 epsilon <- logitUpdate$coef
@@ -161,7 +161,7 @@ c(PsiHat.SS, PsiHat.IPTW, PsiHat.TMLE)
 ```
 
 
-```{r}
+```{r warning=FALSE}
 CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, V = 20, SL.library=SL.library, family='binomial')
 summary(CV.SL.out)
 CV.SL.out$AllSL
