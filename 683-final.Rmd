@@ -48,6 +48,7 @@ ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 Alona
 
 ```{r warning=FALSE}
+set.seed(123)
 # simple substitution estimator (a.k.a. parameteric G-computation)
 txt <- ObsData
 control <- ObsData
@@ -123,8 +124,8 @@ run.tmle <- function(ObsData, SL.library){
   X0$A <- 0
   
   # Estimate E_0(Y|A,W) with Super Learner
-  SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library, 
-                             family="binomial")
+  SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
+              family="binomial", cvControl=list(V=10,stratifyCV=TRUE))
   
   # get the expected outcome, given the observed exposure and covariates
   expY.givenAW <- predict(SL.outcome, newdata=ObsData)$pred
@@ -143,7 +144,8 @@ run.tmle <- function(ObsData, SL.library){
   #  Super Learner for the exposure mechanism  P_0(A=1|W)
   SL.exposure <- SuperLearner(Y=ObsData$A, 
                               X=subset(ObsData, select= -c(A,Y,W2)),
-                              SL.library=SL.library, family="binomial")
+                              SL.library=SL.library, family="binomial",
+                              cvControl=list(V=10))
   
   # generate the predicted prob of being exposed, given baseline cov
   probA1.givenW <- SL.exposure$SL.predict
@@ -199,8 +201,29 @@ est
 ```
 
 
-
 # Non parametric bootstrap
+
+
+```{r}
+# B=500
+# # data frame for estimates based on the boot strap sample
+# estimates<- data.frame(matrix(NA, nrow=B, ncol=3))
+# # for loop from b=1 to total number of bootstrap samples
+# for(b in 1:B){
+# 
+# # sample the indices 1 to n with replacement
+# bootIndices<- sample(1:nrow(data), replace=T)
+# bootData<- ObsData[bootIndices,]
+# 
+# # calling the above function
+# estimates[b,] <- run.tmle(ObsData=bootData, SL.library=SL.library)$estimates
+# print(b)
+#  }
+# colnames(estimates)<-c("SimpSubs", "IPTW", "TMLE")
+# #save(estimates, file='RLab6_boot.Rdata')
+```
+
+
 
 
 
