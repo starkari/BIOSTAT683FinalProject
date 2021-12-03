@@ -119,8 +119,8 @@ run.tmle <- function(ObsData, SL.library){
   
   # set the exposure=1 in X1 and the exposure=0 in X0
   X1 <- X0 <- X
-  X1$A <- 1 	# exposed ('good guy')
-  X0$A <- 0	# unexposed (not a 'good guy')
+  X1$A <- 1 
+  X0$A <- 0
   
   # Estimate E_0(Y|A,W) with Super Learner
   SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library, 
@@ -197,4 +197,10 @@ est <- out$estimates
 est
 
 ```
+
+
+
+# Non parametric bootstrap
+
+
 
