@@ -16,6 +16,8 @@ library(dplyr)
 library(kableExtra)
 library(randomForest)
 knitr::opts_chunk$set(echo = TRUE)
+
+set.seed(123)
 ```
 
 
