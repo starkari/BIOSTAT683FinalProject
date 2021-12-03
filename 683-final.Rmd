@@ -60,7 +60,7 @@ psi.hat <- mean(pred.txt - pred.control)
 psi.hat
 
 # IPTW estimator
-prob.AW.reg <- glm(A ~ W11 + W12 + W13 + W14 + W2, family="binomial", data=ObsData)
+prob.AW.reg <- glm(A ~ W11 + W12 + W13 + W14, family="binomial", data=ObsData)
 prob.1W <- predict(prob.AW.reg, type= "response")
 prob.0W <- 1 - prob.1W
 
