@@ -46,6 +46,7 @@ ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 Alona
 
 ```{r warning=FALSE}
+set.seed(123)
 # simple substitution estimator (a.k.a. parameteric G-computation)
 txt <- ObsData
 control <- ObsData
