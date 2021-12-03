@@ -2,7 +2,9 @@
 title: "Untitled"
 author: "Diezhang WU"
 date: "12/1/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -49,7 +51,7 @@ table(ObsData[which(ObsData$A == 0),]$W13, ObsData[which(ObsData$A == 0),]$W14)
 
 
 
-```{r}
+```{r warning=FALSE}
 ## substitution estimator
 reg.model <- glm(Y ~ A + W11 + W12 + W13 + W14 + W2, family = "binomial", data = ObsData)
 txt <- control <- ObsData
@@ -60,7 +62,7 @@ predictY.control <- predict(reg.model, newdata = control, type = "response")
 estimate.ss <- mean(predictY.txt - predictY.control)
 estimate.ss
 ```
-```{r}
+```{r warning=FALSE}
 ## IPTW estimator
 prob.AW.reg <- glm(A ~W11 + W12 + W13 + W14, family = "binomial", data = ObsData)
 probs.1W <- predict(prob.AW.reg, type = "response")
@@ -78,7 +80,7 @@ IPTW
 ```
 
 
-```{r}
+```{r warning=FALSE}
 ## TMLE estimator with superlerner
 ## SS with TMLE
 library("SuperLearner")
