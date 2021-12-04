@@ -189,7 +189,7 @@ run.tmle <- function(ObsData, SL.library){
   estimates <- data.frame(cbind(PsiHat.SS=PsiHat.SS, PsiHat.IPTW, PsiHat.TMLE))
   predictions <- data.frame(cbind(expY.givenAW.star, expY.given1W.star, expY.given0W.star))
   colnames(predictions) <- c('givenAW', 'given1W', 'given0W')
-  list(estimates=estimates, predictions=predictions, H.AW=H.AW)
+  list(estimates=estimates, predictions=predictions, H.AW=H.AW, probA1.givenW=probA1.givenW, probA0.givenW=probA1.givenW)
 }
 ```
 
@@ -308,6 +308,15 @@ ggplot(mapping = aes(estimates[,3]))+
   labs(title="TMLE Estimator", 
        subtitle = "500 Bootstrap Samples")+
   theme(plot.title = element_text(colour = "red"))
+
+
+ggplot(mapping = aes(out$probA1.givenW))+
+  geom_histogram(fill="red3",bins = 25)+
+  xlab("Probability")+
+  ylab("Freq")+
+  labs(title="Propensity Score A=1")+
+  theme(plot.title = element_text(colour = "dark green"))+
+  xlim(0,1)
 ```
 
 
