@@ -202,4 +202,138 @@ est
 ```
 
 
+# CV Superlearner
+```{r message=FALSE, warning=FALSE}
+X<- subset(ObsData, select= -Y )
+
+CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
+                            SL.library=SL.library, family='binomial',
+                            cvControl = list(V = 5), 
+                            innerCvControl = list(list(V = 20)))
+
+summary(CV.SL.out)
+
+CV.SL.out$whichDiscrete
+```
+# Influence Curve
+
+```{r}
+n <- nrow(ObsData)
+# clever covariate
+H.AW <- out$H.AW
+# targeted predictions
+expY.AW.star <- out$predictions[,'givenAW']
+expY.1W.star <- out$predictions[,'given1W']
+expY.0W.star <- out$predictions[,'given0W']
+#  point estimate
+PsiHat.TMLE <- est$PsiHat.TMLE
+
+# plug-in
+IC <- H.AW*(ObsData$Y - expY.AW.star) + expY.1W.star - expY.0W.star - PsiHat.TMLE
+summary(IC)
+hist(IC)
+
+# estimate sigma^2 with the variance of the IC divided by n
+varHat.IC <- var(IC)/n
+varHat.IC
+# standard error estimate
+se <- sqrt(varHat.IC)
+se
+
+
+##### TMLE
+
+# obtain 95% two-sided confidence intervals TMLE:
+alpha <- 0.05
+c(PsiHat.TMLE+qnorm(alpha/2, lower.tail=T)*se,
+  PsiHat.TMLE+qnorm(alpha/2, lower.tail=F)*se)
+
+# calculate the pvalue tmle
+2* pnorm( abs(PsiHat.TMLE /se), lower.tail=F )
+
+
+####### IPTW
+
+PsiHat.IPTW <- est$PsiHat.IPTW
+
+# obtain 95% two-sided confidence intervals TMLE:
+alpha <- 0.05
+c(PsiHat.IPTW+qnorm(alpha/2, lower.tail=T)*se,
+  PsiHat.IPTW+qnorm(alpha/2, lower.tail=F)*se)
+
+# calculate the pvalue tmle
+2* pnorm( abs(PsiHat.IPTW /se), lower.tail=F )
+
+
+
+```
+
+
+
+
+
+
+# Non-parametric bootstrap
+
+```{r}
+load('boot_par.Rdata')
+
+
+summary(estimates)
+```
+
+
+```{r}
+par(mfrow=c(3,1))
+hist(estimates[,1], main="Histogram of point estimates from the Simple Substitution estimator
+over B bootstrapped samples", xlab="Point Estimates")
+hist(estimates[,2], main="Histogram of point estimates from IPTW estimator
+over B bootstrapped samples",  xlab="Point Estimates")
+hist(estimates[,3], main="Histogram of point estimates from TMLE
+over B bootstrapped samples",  xlab="Point Estimates")
+```
+
+
+```{r}
+#---------------------------------
+# 95% Confidence intervals assuming a normal dist & via quantiles
+#---------------------------------
+create.CI <- function(pt, boot, alpha=0.05){
+  Zquant <- qnorm(alpha/2, lower.tail=F)
+  CI.normal <- c(pt - Zquant*sd(boot,na.rm = TRUE), 
+                 pt + Zquant*sd(boot,na.rm = TRUE) )
+  CI.quant  <- quantile(boot, prob=c(0.025,0.975) ,na.rm=TRUE)
+  out <- data.frame(rbind(CI.normal, CI.quant))
+  colnames(out) <- c('CI.lo', 'CI.hi')
+  out
+}
+```
+
+
+```{r}
+# IMPORTANT - POINT OF CONFUSION FOR PAST STUDENTS
+# The point estimate 'pt' is from the original dataset
+
+# Simple Subs - note the bias because of misspecified regression? Will it converge fast enough?
+est$PsiHat.SS
+create.CI(pt=est$PsiHat.SS, boot=estimates[,"SimpSubs"])
+
+# IPTW
+est$PsiHat.IPTW
+create.CI(pt=est$PsiHat.IPTW, boot=estimates[,"IPTW"])
+
+# TMLE
+est$PsiHat.TMLE
+create.CI(pt=est$PsiHat.TMLE, boot=estimates[,"TMLE"])
+```
+
+
+```{r}
+# Compare to IC estimate
+c(PsiHat.TMLE+qnorm(alpha/2, lower.tail=T)*se,
+  PsiHat.TMLE+qnorm(alpha/2, lower.tail=F)*se)
+
+
+```
+
 
