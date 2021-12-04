@@ -125,7 +125,7 @@ run.tmle <- function(ObsData, SL.library){
   
   # Estimate E_0(Y|A,W) with Super Learner
   SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
-              family="binomial", cvControl=list(V=10,stratifyCV=TRUE))
+              family="binomial", cvControl=list(V=10))
   
   # get the expected outcome, given the observed exposure and covariates
   expY.givenAW <- predict(SL.outcome, newdata=ObsData)$pred
@@ -145,7 +145,7 @@ run.tmle <- function(ObsData, SL.library){
   SL.exposure <- SuperLearner(Y=ObsData$A, 
                               X=subset(ObsData, select= -c(A,Y,W2)),
                               SL.library=SL.library, family="binomial",
-                              cvControl=list(V=10))
+                              cvControl=list(V=10, stratifyCV = TRUE))
   
   # generate the predicted prob of being exposed, given baseline cov
   probA1.givenW <- SL.exposure$SL.predict
@@ -160,7 +160,7 @@ run.tmle <- function(ObsData, SL.library){
   H.0W <- -1/probA0.givenW
   
   # IPTW estimate
-  PsiHat.IPTW <- mean(H.AW*ObsData$Y)
+  PsiHat.IPTW <- mean(H.AW*ObsData$Y, na.rm = TRUE)
   
   #------------------------------------------
   # Targeting & TMLE
@@ -168,6 +168,7 @@ run.tmle <- function(ObsData, SL.library){
   
   # Update the initial estimator of E_0(Y|A,W)
   # run logistic regression of Y on H.AW using the logit of the esimates as offset
+  expY.givenAW <- expY.givenAW - 0.000001
   logitUpdate<- glm( ObsData$Y ~ -1 +offset(qlogis(expY.givenAW)) + 
                        H.AW, family='binomial')
   epsilon <- logitUpdate$coef
@@ -203,27 +204,23 @@ est
 
 # Non parametric bootstrap
 
-
 ```{r}
-# B=500
-# # data frame for estimates based on the boot strap sample
-# estimates<- data.frame(matrix(NA, nrow=B, ncol=3))
-# # for loop from b=1 to total number of bootstrap samples
-# for(b in 1:B){
-# 
-# # sample the indices 1 to n with replacement
-# bootIndices<- sample(1:nrow(data), replace=T)
-# bootData<- ObsData[bootIndices,]
-# 
-# # calling the above function
-# estimates[b,] <- run.tmle(ObsData=bootData, SL.library=SL.library)$estimates
-# print(b)
-#  }
-# colnames(estimates)<-c("SimpSubs", "IPTW", "TMLE")
-# #save(estimates, file='RLab6_boot.Rdata')
+library(foreach)
+library(doParallel)
+B = 10
+n <- nrow(ObsData)
+registerDoParallel(cores = detectCores())
+estimates <-
+  foreach(b = 1:B, .combine = rbind) %dopar% {
+  # sample the indices 1 to n with replacement
+  bootIndices<- sample(1:n, replace=T)
+  bootData <- ObsData[bootIndices,]
+  # calling the above function
+  output <- run.tmle(ObsData=bootData, SL.library=SL.library)$estimates
+  return(output)
+}
+colnames(estimates)<-c('SimpSubs', 'IPTW', 'TMLE')
 ```
-
-
 
 
 
