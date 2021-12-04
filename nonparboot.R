@@ -125,7 +125,7 @@ run.tmleboot <- function(ObsData, SL.library,folds){
 
 
 
-B = 5
+B = 500
 n <- nrow(ObsData)
 registerDoParallel(cores = detectCores())
 
