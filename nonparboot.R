@@ -33,7 +33,7 @@ SL.library<- c('SL.glm', 'SL.glm.interaction', "SL.step",
                "SL.randomForest","SL.step.forward","SL.stepAIC","SL.mean")
 
 
-run.tmle <- function(ObsData, SL.library){
+run.tmleboot <- function(ObsData, SL.library,folds){
   
   #------------------------------------------
   # Simple substitution estimator 
@@ -49,7 +49,8 @@ run.tmle <- function(ObsData, SL.library){
   
   # Estimate E_0(Y|A,W) with Super Learner
   SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
-                             family="binomial", cvControl=list(V=10,stratifyCV=TRUE))
+                             family="binomial", cvControl=list(V=folds, 
+                                                               stratifyCV=TRUE))
   
   # get the expected outcome, given the observed exposure and covariates
   expY.givenAW <- predict(SL.outcome, newdata=ObsData)$pred
@@ -69,7 +70,8 @@ run.tmle <- function(ObsData, SL.library){
   SL.exposure <- SuperLearner(Y=ObsData$A, 
                               X=subset(ObsData, select= -c(A,Y,W2)),
                               SL.library=SL.library, family="binomial",
-                              cvControl=list(V=10))
+                              cvControl=list(V=folds,
+                                             stratifyCV=TRUE))
   
   # generate the predicted prob of being exposed, given baseline cov
   probA1.givenW <- SL.exposure$SL.predict
@@ -84,11 +86,13 @@ run.tmle <- function(ObsData, SL.library){
   H.0W <- -1/probA0.givenW
   
   # IPTW estimate
-  PsiHat.IPTW <- mean(H.AW*ObsData$Y)
+  PsiHat.IPTW <- mean(H.AW*ObsData$Y,na.rm = TRUE)
   
   #------------------------------------------
   # Targeting & TMLE
   #------------------------------------------
+  
+  expY.givenAW <- expY.givenAW-1e-6 # so we don't error
   
   # Update the initial estimator of E_0(Y|A,W)
   # run logistic regression of Y on H.AW using the logit of the esimates as offset
@@ -112,23 +116,35 @@ run.tmle <- function(ObsData, SL.library){
   estimates <- data.frame(cbind(PsiHat.SS=PsiHat.SS, PsiHat.IPTW, PsiHat.TMLE))
   predictions <- data.frame(cbind(expY.givenAW.star, expY.given1W.star, expY.given0W.star))
   colnames(predictions) <- c('givenAW', 'given1W', 'given0W')
+  
+  #print(estimates)
+  
   list(estimates=estimates, predictions=predictions, H.AW=H.AW)
+  
 }
 
 
 
-B = 1000
+B = 5
 n <- nrow(ObsData)
 registerDoParallel(cores = detectCores())
+
+
+
 estimates <-
   foreach(b = 1:B, .combine = rbind) %dopar% {
-    # sample the indices 1 to n with replacement
-    bootIndices<- sample(1:n, replace=T)
-    bootData <- ObsData[bootIndices,]
-    # calling the above function
-    output <- run.tmle(ObsData=bootData, SL.library=SL.library)$estimates
-    return(output)
-  }
+  # # sample the indices 1 to n with replacement
+  # bootIndices<- sample(1:n, replace=T)
+  # bootData <- ObsData[bootIndices,]
+  # # calling the above function
+  
+  bootIndices<- sample(1:n, size = n, replace=T)
+  bootData <- rbind(ObsData[bootIndices,])
+  
+  folds <- min(sum(bootData$Y==0),10)
+  output <- run.tmleboot(ObsData=bootData, SL.library=SL.library, 
+                         folds = folds)$estimates
+}
 
 colnames(estimates)<-c("SimpSubs", "IPTW", "TMLE")
 
