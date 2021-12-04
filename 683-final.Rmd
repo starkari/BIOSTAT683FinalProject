@@ -284,13 +284,30 @@ summary(estimates)
 
 
 ```{r}
-par(mfrow=c(3,1))
-hist(estimates[,1], main="Histogram of point estimates from the Simple Substitution estimator
-over B bootstrapped samples", xlab="Point Estimates")
-hist(estimates[,2], main="Histogram of point estimates from IPTW estimator
-over B bootstrapped samples",  xlab="Point Estimates")
-hist(estimates[,3], main="Histogram of point estimates from TMLE
-over B bootstrapped samples",  xlab="Point Estimates")
+
+ggplot(mapping = aes(estimates[,1]))+
+  geom_histogram(fill="dark green",bins = 25)+
+  xlab("Point Estimates")+
+  ylab("Freq")+
+  labs(title="Simple Substitution Estimator", 
+       subtitle = "500 Bootstrap Samples")+
+  theme(plot.title = element_text(colour = "red"))
+
+ggplot(mapping = aes(estimates[,2]))+
+  geom_histogram(fill="dark green",bins = 25)+
+  xlab("Point Estimates")+
+  ylab("Freq")+
+  labs(title="IPTW Estimator", 
+       subtitle = "500 Bootstrap Samples")+
+  theme(plot.title = element_text(colour = "red"))
+
+ggplot(mapping = aes(estimates[,3]))+
+  geom_histogram(fill="dark green",bins = 25)+
+  xlab("Point Estimates")+
+  ylab("Freq")+
+  labs(title="TMLE Estimator", 
+       subtitle = "500 Bootstrap Samples")+
+  theme(plot.title = element_text(colour = "red"))
 ```
 
 
