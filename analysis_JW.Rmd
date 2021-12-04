@@ -2,7 +2,9 @@
 title: "Untitled"
 author: "Diezhang WU"
 date: "12/1/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -42,6 +44,14 @@ ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
 
 ```{r}
+table(ObsData[which(ObsData$A == 1),]$W13, ObsData[which(ObsData$A == 1),]$W14)
+table(ObsData[which(ObsData$A == 0),]$W13, ObsData[which(ObsData$A == 0),]$W14)
+```
+
+
+
+
+```{r warning=FALSE}
 ## substitution estimator
 reg.model <- glm(Y ~ A + W11 + W12 + W13 + W14 + W2, family = "binomial", data = ObsData)
 txt <- control <- ObsData
@@ -52,9 +62,9 @@ predictY.control <- predict(reg.model, newdata = control, type = "response")
 estimate.ss <- mean(predictY.txt - predictY.control)
 estimate.ss
 ```
-```{r}
+```{r warning=FALSE}
 ## IPTW estimator
-prob.AW.reg <- glm(A ~W11 + W12 + W13 + W14 + W2, family = "binomial", data = ObsData)
+prob.AW.reg <- glm(A ~W11 + W12 + W13 + W14, family = "binomial", data = ObsData)
 probs.1W <- predict(prob.AW.reg, type = "response")
 probs.0W <- 1 - probs.1W
 summary(probs.1W)
@@ -70,7 +80,7 @@ IPTW
 ```
 
 
-```{r}
+```{r warning=FALSE}
 ## TMLE estimator with superlerner
 ## SS with TMLE
 library("SuperLearner")
@@ -96,7 +106,7 @@ PsiHat.SS
 
 ## IPTW with TLME
 X <- subset(ObsData, select= -c(A,Y))
-SL.exposure<- SuperLearner(Y=ObsData$A, X=X, SL.library=SL.library, family="binomial")
+SL.exposure<- SuperLearner(Y=ObsData$A, X=X[,-ncol(X)], SL.library=SL.library, family="binomial")
 SL.exposure
 probA1.givenW<- SL.exposure$SL.predict
 # above is equivalent to
@@ -130,10 +140,14 @@ c(PsiHat.SS, PsiHat.IPTW, PsiHat.TMLE)
 CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, V = 20, SL.library=SL.library, family='binomial')
 summary(CV.SL.out)
 CV.SL.out$AllSL
+CV.SL.out$coef
 ```
 
 
 
+```{r}
+summary(data.frame(probA1.givenW, probA0.givenW))
+```
 
 
 

@@ -1,24 +1,10 @@
----
-title: "Ariane-Analysis"
-author: "Ariane Stark"
-date: "11/29/2021"
-output: pdf_document
----
-
-```{r setup, include=FALSE}
+library(foreach)
+library(doParallel)
 library(tidyverse)
 library(SuperLearner)
 library(ltmle)
-library(MASS)
 library(dplyr)
-library(kableExtra)
-library(caret)
-library(randomForest)
-knitr::opts_chunk$set(echo = FALSE)
-```
 
-
-```{r include=FALSE}
 data <-read.csv("fertility_sperm.csv")
 colnames(data)
 
@@ -39,144 +25,31 @@ data <- data %>%
          Y = ifelse(diagnosis=='N',1,0))
 
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
-```
 
-
-```{r include=FALSE}
-table(ObsData$W13,ObsData$Y,ObsData$A)
-
-table(ObsData$W14,ObsData$Y,ObsData$A)
-
-table(ObsData$W2,ObsData$Y,ObsData$A)
-
-
-table(ObsData$W13,ObsData$W14,ObsData$A)
-```
-
-
-# Parametric G-Comp
-
-```{r}
-
-reg.model<- glm(Y ~ W11 + W12 + W13 + W14 + W2 + A
-                + A*W11 + A*W12 + A*W13 + A*W14, 
-                family='binomial', data=ObsData)
-
-txt<- control <- ObsData
-
-txt$A <-1
-control$A <- 0
-
-predictY.txt<- predict(reg.model, newdata = txt, type='response')
-predictY.control<- predict(reg.model, newdata = control, type='response')
-
-mean(predictY.txt - predictY.control)
-
-
-```
-
-
-
-
-# IPTW
-```{r}
-prob.AW.reg<- glm(A ~ W11 + W12 + W13 + W14, 
-                  family="binomial", data=ObsData)
-prob.1W <- predict(prob.AW.reg, type= "response")
-prob.0W <- 1 - prob.1W
-
-
-wt1 <- as.numeric(ObsData$A==1)/prob.1W
-wt0 <- as.numeric(ObsData$A==0)/prob.0W
-
-summary(wt1)
-summary(wt0)
-
-IPTW<- mean( wt1*ObsData$Y) -  mean( wt0*ObsData$Y)
-IPTW
-```
-Over 50% of wt1 are zero
-
-The IPTW estimate of $\Psi(\mathbb{P}_0)=$ `r paste0(IPTW*100,"%)`
-
-
-# Stabilized IPTW - Modified Horvitz Thompson
-
-```{r}
-MHT <- mean( wt1*ObsData$Y)/mean( wt1) -  mean( wt0*ObsData$Y)/mean( wt0)
-MHT
-```
-
-
-# Superlearner
-
-```{r message=FALSE, warning=FALSE}
 set.seed(123)
 
-X<- subset(ObsData, select= -Y )
 
 SL.library<- c('SL.glm', 'SL.glm.interaction', "SL.step",
                "SL.randomForest","SL.step.forward","SL.stepAIC","SL.mean")
 
-SL.out<- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
-                      family='binomial', 
-                      cvControl=list(V=10,stratifyCV=TRUE),
-                      verbose = FALSE)
 
-SL.out
-
-#SL.out$SL.predict
-
-mean( (ObsData$Y- SL.out$SL.predict)^2)
-```
-
-
-```{r message=FALSE, warning=FALSE}
-CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
-                            SL.library=SL.library, family='binomial',
-                            cvControl = list(V = 5), 
-                            innerCvControl = list(list(V = 20)))
-
-summary(CV.SL.out)
-
-CV.SL.out$coef
-
-
-CV.SL.out$whichDiscrete
-```
-Random forest had bets performance in 2 calls and step aic in the other 3
-
-
-Random seeds seem to alternate around rf, step aic, and step forward
-
-
-# TMLE
-
-```{r message=FALSE, warning=FALSE}
-ltmle.SL<- ltmle(data=ObsData, Anodes='A', Ynodes='Y', abar=list(1,0),
-                 SL.library=SL.library)
-summary(ltmle.SL)
-
-```
-```{r}
-set.seed(123)
 run.tmle <- function(ObsData, SL.library){
   
   #------------------------------------------
   # Simple substitution estimator 
   #------------------------------------------
-
+  
   # dataframe X with baseline covariates and exposure
   X <- subset(ObsData, select=c(A, W11, W12, W13, W14,W2))
   
   # set the exposure=1 in X1 and the exposure=0 in X0
   X1 <- X0 <- X
-  X1$A <- 1 	# exposed ('good guy')
-  X0$A <- 0	# unexposed (not a 'good guy')
+  X1$A <- 1 
+  X0$A <- 0
   
   # Estimate E_0(Y|A,W) with Super Learner
-  SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library, 
-                             family="binomial")
+  SL.outcome <- SuperLearner(Y=ObsData$Y, X=X, SL.library=SL.library,
+                             family="binomial", cvControl=list(V=10,stratifyCV=TRUE))
   
   # get the expected outcome, given the observed exposure and covariates
   expY.givenAW <- predict(SL.outcome, newdata=ObsData)$pred
@@ -195,7 +68,8 @@ run.tmle <- function(ObsData, SL.library){
   #  Super Learner for the exposure mechanism  P_0(A=1|W)
   SL.exposure <- SuperLearner(Y=ObsData$A, 
                               X=subset(ObsData, select= -c(A,Y,W2)),
-                              SL.library=SL.library, family="binomial")
+                              SL.library=SL.library, family="binomial",
+                              cvControl=list(V=10))
   
   # generate the predicted prob of being exposed, given baseline cov
   probA1.givenW <- SL.exposure$SL.predict
@@ -240,14 +114,22 @@ run.tmle <- function(ObsData, SL.library){
   colnames(predictions) <- c('givenAW', 'given1W', 'given0W')
   list(estimates=estimates, predictions=predictions, H.AW=H.AW)
 }
-```
 
 
-```{r}
-out <- run.tmle(ObsData = ObsData, SL.library = SL.library)
-est <- out$estimates
-est
 
-```
+B = 1000
+n <- nrow(ObsData)
+registerDoParallel(cores = detectCores())
+estimates <-
+  foreach(b = 1:B, .combine = rbind) %dopar% {
+    # sample the indices 1 to n with replacement
+    bootIndices<- sample(1:n, replace=T)
+    bootData <- ObsData[bootIndices,]
+    # calling the above function
+    output <- run.tmle(ObsData=bootData, SL.library=SL.library)$estimates
+    return(output)
+  }
 
+colnames(estimates)<-c("SimpSubs", "IPTW", "TMLE")
 
+save(estimates, file='boot_par.Rdata')
