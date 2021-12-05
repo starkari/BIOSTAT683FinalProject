@@ -39,13 +39,13 @@ data <- data %>%
          A = case_when(smoking==-1 ~ 0,
                        smoking==0 ~ 1,
                        smoking==1 ~ 1),
-         Y = ifelse(diagnosis=='N',0,1))
+         Y = ifelse(diagnosis=='N',1,0))
 
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
 ```
 
-Alona
+
 
 ```{r warning=FALSE}
 set.seed(123)
@@ -162,13 +162,16 @@ run.tmle <- function(ObsData, SL.library){
   # IPTW estimate
   PsiHat.IPTW <- mean(H.AW*ObsData$Y, na.rm = TRUE)
   
+
   #------------------------------------------
   # Targeting & TMLE
   #------------------------------------------
   
   # Update the initial estimator of E_0(Y|A,W)
   # run logistic regression of Y on H.AW using the logit of the esimates as offset
+  
   expY.givenAW <- expY.givenAW - 0.000001
+  
   logitUpdate<- glm( ObsData$Y ~ -1 +offset(qlogis(expY.givenAW)) + 
                        H.AW, family='binomial')
   epsilon <- logitUpdate$coef
@@ -195,6 +198,7 @@ run.tmle <- function(ObsData, SL.library){
 
 
 ```{r}
+set.seed(123)
 out <- run.tmle(ObsData = ObsData, SL.library = SL.library)
 est <- out$estimates
 est
