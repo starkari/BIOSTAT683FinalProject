@@ -212,12 +212,11 @@ X<- subset(ObsData, select= -Y )
 set.seed(123)
 CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
                             SL.library=SL.library, family='binomial',
-                            cvControl = list(V = 5, stratifyCV=TRUE), 
-                            innerCvControl = list(list(V = 80)))
+                            cvControl = list(V = 5), 
+                            innerCvControl = list(list(V =20)))
 
 summary(CV.SL.out)
 
-CV.SL.out$whichDiscrete
 ```
 # Influence Curve
 
