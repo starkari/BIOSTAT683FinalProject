@@ -209,7 +209,6 @@ est
 # CV Superlearner
 ```{r message=FALSE, warning=FALSE}
 X<- subset(ObsData, select= -Y )
-set.seed(123)
 CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
                             SL.library=SL.library, family='binomial',
                             cvControl = list(V = 5), 
@@ -281,6 +280,7 @@ c(PsiHat.IPTW+qnorm(alpha/2, lower.tail=T)*se,
 ```{r}
 load('boot_par.Rdata')
 
+colnames(estimates)<-c("SimpSubs", "IPTW", "TMLE")
 
 summary(estimates)
 ```
