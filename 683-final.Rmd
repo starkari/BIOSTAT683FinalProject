@@ -39,7 +39,7 @@ data <- data %>%
          A = case_when(smoking==-1 ~ 0,
                        smoking==0 ~ 1,
                        smoking==1 ~ 1),
-         Y = ifelse(diagnosis=='N',1,0))
+         Y = ifelse(diagnosis=='N',0,1))
 
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
@@ -209,10 +209,14 @@ est
 # CV Superlearner
 ```{r message=FALSE, warning=FALSE}
 X<- subset(ObsData, select= -Y )
-
+set.seed(123)
 CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
                             SL.library=SL.library, family='binomial',
+<<<<<<< HEAD
                             cvControl = list(V = 5), 
+=======
+                            cvControl = list(V = 5, stratifyCV=TRUE), 
+>>>>>>> 5a9e5397828a3705a6124917c2feabec742e8345
                             innerCvControl = list(list(V = 80)))
 
 summary(CV.SL.out)

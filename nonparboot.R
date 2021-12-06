@@ -141,11 +141,11 @@ estimates <-
   bootIndices<- sample(1:n, size = n, replace=T)
   bootData <- rbind(ObsData[bootIndices,])
   
-  folds <- min(sum(bootData$Y==0),10)
+  folds <- min(sum(bootData$Y==1),10)
   output <- run.tmleboot(ObsData=bootData, SL.library=SL.library, 
                          folds = folds)$estimates
 }
 
 colnames(estimates)<-c("SimpSubs", "IPTW", "TMLE")
 
-save(estimates, file='boot_par2.Rdata')
+save(estimates, file='boot_par.Rdata')
