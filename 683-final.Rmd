@@ -212,7 +212,6 @@ CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X,
                             SL.library=SL.library, family='binomial',
                             cvControl = list(V = 5), 
                             innerCvControl = list(list(V = 20)))
-
 summary(CV.SL.out)
 ```
 # Influence Curve
