@@ -212,11 +212,7 @@ X<- subset(ObsData, select= -Y )
 set.seed(123)
 CV.SL.out<- CV.SuperLearner(Y=ObsData$Y, X=X, 
                             SL.library=SL.library, family='binomial',
-<<<<<<< HEAD
-                            cvControl = list(V = 5), 
-=======
                             cvControl = list(V = 5, stratifyCV=TRUE), 
->>>>>>> 5a9e5397828a3705a6124917c2feabec742e8345
                             innerCvControl = list(list(V = 80)))
 
 summary(CV.SL.out)
