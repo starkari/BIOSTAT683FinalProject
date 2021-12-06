@@ -22,7 +22,7 @@ data <- data %>%
          A = case_when(smoking==-1 ~ 0,
                        smoking==0 ~ 1,
                        smoking==1 ~ 1),
-         Y = ifelse(diagnosis=='N',1,0))
+         Y = ifelse(diagnosis=='N',0,1))
 
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
@@ -141,7 +141,7 @@ estimates <-
   bootIndices<- sample(1:n, size = n, replace=T)
   bootData <- rbind(ObsData[bootIndices,])
   
-  folds <- min(sum(bootData$Y==0),10)
+  folds <- min(sum(bootData$Y==1),10)
   output <- run.tmleboot(ObsData=bootData, SL.library=SL.library, 
                          folds = folds)$estimates
 }
