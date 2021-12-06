@@ -22,7 +22,7 @@ data <- data %>%
          A = case_when(smoking==-1 ~ 0,
                        smoking==0 ~ 1,
                        smoking==1 ~ 1),
-         Y = ifelse(diagnosis=='N',0,1))
+         Y = ifelse(diagnosis=='N',1,0))
 
 ObsData <- data %>% dplyr::select(W11, W12, W13, W14, W2, A, Y)
 
