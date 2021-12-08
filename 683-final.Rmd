@@ -247,8 +247,8 @@ se
 
 # obtain 95% two-sided confidence intervals TMLE:
 alpha <- 0.05
-c(PsiHat.TMLE+qnorm(alpha/2, lower.tail=T)*se,
-  PsiHat.TMLE+qnorm(alpha/2, lower.tail=F)*se)
+round(c(PsiHat.TMLE+qnorm(alpha/2, lower.tail=T)*se,
+  PsiHat.TMLE+qnorm(alpha/2, lower.tail=F)*se),4)
 
 # calculate the pvalue tmle
 2* pnorm( abs(PsiHat.TMLE /se), lower.tail=F )
@@ -258,15 +258,23 @@ c(PsiHat.TMLE+qnorm(alpha/2, lower.tail=T)*se,
 
 PsiHat.IPTW <- est$PsiHat.IPTW
 
-# obtain 95% two-sided confidence intervals TMLE:
-alpha <- 0.05
-c(PsiHat.IPTW+qnorm(alpha/2, lower.tail=T)*se,
-  PsiHat.IPTW+qnorm(alpha/2, lower.tail=F)*se)
+# obtain 95% two-sided confidence intervals:
+round(c(PsiHat.IPTW+qnorm(alpha/2, lower.tail=T)*se,
+  PsiHat.IPTW+qnorm(alpha/2, lower.tail=F)*se),4)
 
-# calculate the pvalue tmle
+# calculate the pvalue 
 2* pnorm( abs(PsiHat.IPTW /se), lower.tail=F )
 
+####### SS
 
+PsiHat.SS <- est$PsiHat.SS
+
+# obtain 95% two-sided confidence intervals:
+round(c(PsiHat.SS+qnorm(alpha/2, lower.tail=T)*se,
+  PsiHat.SS+qnorm(alpha/2, lower.tail=F)*se),4)
+
+# calculate the pvalue 
+2* pnorm( abs(PsiHat.SS /se), lower.tail=F )
 
 ```
 
@@ -287,7 +295,6 @@ summary(estimates)
 
 
 ```{r}
-
 ggplot(mapping = aes(estimates[,1]))+
   geom_histogram(fill="dark green",bins = 25)+
   xlab("Point Estimates")+
@@ -311,8 +318,10 @@ ggplot(mapping = aes(estimates[,3]))+
   labs(title="TMLE Estimator", 
        subtitle = "500 Bootstrap Samples")+
   theme(plot.title = element_text(colour = "red"))
+```
 
 
+```{r}
 ggplot(mapping = aes(out$probA1.givenW))+
   geom_histogram(fill="red3",bins = 25)+
   xlab("Probability")+
@@ -320,6 +329,9 @@ ggplot(mapping = aes(out$probA1.givenW))+
   labs(title="Propensity Score A=1")+
   theme(plot.title = element_text(colour = "dark green"))+
   xlim(0,1)
+
+weights1 <- as.numeric(ObsData$A==1)/out$probA1.givenW
+summary(weights1)
 ```
 
 
